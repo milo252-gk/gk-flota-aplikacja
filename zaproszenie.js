@@ -6,8 +6,9 @@
 
    Ekran mówi też wprost rzecz, którą łatwo przeoczyć: czy ten kod będzie
    działał jutro. Adres z tunelu w trybie szybkim zmienia się po każdym
-   uruchomieniu programu, więc wydrukowanie go i przyklejenie w szatni kończy
-   się stertą kartek, z których żadna nie działa.                             */
+   uruchomieniu programu — i bez restartu, gdy strażnik tunelu sam postawi
+   nowy tunel — więc wydrukowanie go i przyklejenie w szatni kończy się
+   stertą kartek, z których żadna nie działa.                                 */
 
 EKRANY.zaproszenie = {
   tytul: 'Dla kierowców',
@@ -48,9 +49,12 @@ EKRANY.zaproszenie = {
         </div>` : ''}
 
       ${tunelowy && !z.adres_trwaly ? `<div class="wstega uwaga">
-        <b>Ten adres zmieni się po ponownym uruchomieniu programu.</b>
-        Tunel działa w trybie szybkim. Nie drukuj tego kodu ani nie rozsyłaj go
-        na stałe — do tego służy tryb stały z własnym adresem.
+        <b>Ten adres zmieni się po ponownym uruchomieniu programu</b> — a także
+        wtedy, gdy program sam uruchomi nowy tunel, bo stary przestał odpowiadać
+        (strażnik tunelu). Tunel działa w trybie szybkim. Nie drukuj tego kodu
+        ani nie rozsyłaj go na stałe — do tego służy GitHub Pages
+        (<b>Ustawienia → Stały adres dla kierowców</b>) albo tryb stały z własnym
+        adresem. Telefony z aplikacją z GitHub Pages znajdą nowy adres tunelu same.
         </div>` : ''}
 
       ${tunelowy && z.adres_trwaly ? `<div class="wstega ok">
@@ -105,9 +109,10 @@ EKRANY.zaproszenie = {
           </div>
         </div>
 
-        <div class="wstega info">Kierowca loguje się swoim loginem i PIN-em —
-        konto zakładasz w zakładce <b>Konta</b>. Login może być z imienia i nazwiska,
-        na przykład <code>daniel zwolinski</code>.</div>${naGithubie ? `
+        <div class="wstega info">Kierowca loguje się imieniem i nazwiskiem
+        (albo loginem) i swoim PIN-em — tak samo jak w innych aplikacjach GK.
+        Konto zakładasz w zakładce <b>Konta</b> (albo w Panelu Kierownika, gdy
+        konta przychodzą z Panelu).</div>${naGithubie ? `
 
         <div class="wstega info"><b>Ten krok robi się raz na zawsze.</b>
         Ikona na ekranie telefonu prowadzi pod stały adres, więc kierowca nie

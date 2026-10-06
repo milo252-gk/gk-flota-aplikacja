@@ -217,6 +217,8 @@ function sekcjaTunelu(u) {
         <span class="male">Ten adres wpisuje się w telefonie i dodaje do ekranu
         głównego.</span></div>` : ''}
 
+      ${stanStraznika(u.tunel_straznik, tryb)}
+
       <label class="pole">Tryb
         <select id="u-tunel-tryb">
           <option value="brak"${tryb === 'brak' ? ' selected' : ''}>
@@ -248,9 +250,30 @@ function sekcjaTunelu(u) {
       <p class="slaby male" id="u-tunel-adres-opis">Ten sam, który wpisałeś
       w panelu Cloudflare przy tunelu (<i>Public hostname</i>).</p>
 
-      <p class="slaby male">Zmiana trybu działa dopiero <b>po ponownym uruchomieniu
-      programu</b> — tunel to osobny program, który startuje razem z GK Flota.</p>
+      <p class="slaby male">Zmiana działa od razu po zapisaniu. Program co 2 minuty
+      sprawdza, czy adres odpowiada, i sam uruchamia tunel ponownie, gdy przestanie.</p>
     </div>`;
+}
+
+/* Strażnik tunelu: program sprawdza adres z zewnątrz, tak jak telefon.
+   Tunel potrafi umrzeć po cichu (Cloudflare kasuje adres, a program dalej
+   pokazuje „działa”) — ta linijka mówi, kiedy sprawdzono go naprawdę.          */
+function stanStraznika(s, tryb) {
+  if (!s || !s.wlaczony || tryb === 'brak') return '';
+  if (s.odpowiada === false && s.internet === false) {
+    return `<div class="wstega blad">Brak internetu w biurze od ${escHtml(s.od)}
+      (${s.proby} ${s.proby === 1 ? 'próba' : 'prób'}) — tunel ruszy sam, gdy internet wróci.</div>`;
+  }
+  if (s.odpowiada === false) {
+    return `<div class="wstega uwaga">Adres nie odpowiada od ${escHtml(s.od)}
+      (${s.proby} ${s.proby === 1 ? 'próba' : 'prób'}): ${escHtml(s.powod)}.
+      Po 3 próbach program uruchamia tunel ponownie${s.ostatni_restart
+        ? ` (ostatnio o ${escHtml(s.ostatni_restart)})` : ''}.</div>`;
+  }
+  if (s.odpowiada === true) {
+    return `<p class="slaby male">Ostatnio sprawdzony ${escHtml(s.sprawdzono)} — odpowiada.</p>`;
+  }
+  return '';
 }
 
 /* Opis pod listą trybów zmienia się razem z wyborem. Trzy akapity naraz nikt
@@ -730,16 +753,20 @@ async function zapiszUstawienia() {
   }
   komunikat('Ustawienia zapisane', 'ok');
   await wczytajSlowniki().catch(() => {});
-  // Tunel startuje razem z programem, więc sam zapis niczego nie uruchamia.
-  // Bez tego zdania biuro zapisuje ustawienia, patrzy na „wyłączony" i szuka
-  // błędu tam, gdzie go nie ma.
-  if (dane.tunel_tryb !== trybPrzed) {
-    await potwierdz('Zamknij i uruchom program ponownie',
-      dane.tunel_tryb === 'brak'
-        ? 'Tunel zostanie wyłączony dopiero po ponownym uruchomieniu programu GK Flota.'
-        : 'Adres HTTPS pojawi się po ponownym uruchomieniu programu GK Flota — w czarnym oknie '
-          + 'programu i tutaj, w Ustawieniach.',
-      { tak: 'Rozumiem', nie: 'Zamknij' });
+  odswiezEkran();
+  // Zapis przestawia tunel od razu, ale cloudflared potrzebuje kilku sekund na
+  // adres. Bez ponownego odczytu ekran zostałby na „łączy się…” i biuro
+  // szukałoby błędu tam, gdzie go nie ma.
+  if (dane.tunel_tryb !== trybPrzed || token) czekajNaTunel();
+}
+
+async function czekajNaTunel() {
+  for (let i = 0; i < 15; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    if (stan.ekran !== 'ustawienia') return;
+    let u;
+    try { u = await API.get('/api/ustawienia'); } catch (e) { return; }
+    if (((u.tunel || {}).stan) !== 'uruchamiam') { odswiezEkran(); return; }
   }
   odswiezEkran();
 }

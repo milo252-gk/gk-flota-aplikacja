@@ -6,7 +6,7 @@
    API, sprobuj). Pliki ekranow nic wlasnego w tych sprawach nie robia.
    Instrukcja "jak dodac ekran" stoi na samym koncu pliku.                   */
 
-const WERSJA_SKRYPTU = 'flotex-8f08963bbf66';   // stempluje zbuduj.py
+const WERSJA_SKRYPTU = 'flotex-adf7387a365d';   // stempluje zbuduj.py
 
 /* localStorage tylko przez te trzy funkcje.
 
@@ -48,17 +48,73 @@ const STARE_KLUCZE_PAMIECI = ['token', 'motyw', 'gk_powrot', 'powiadomienia'];
 
 function przeniesStareKlucze() {
   try {
-    if (localStorage.getItem(PRZEDROSTEK_PAMIECI + 'przeniesiono') === '1') return;
-    for (const klucz of STARE_KLUCZE_PAMIECI) {
-      const stara = localStorage.getItem(klucz);
-      if (stara === null) continue;
-      if (localStorage.getItem(PRZEDROSTEK_PAMIECI + klucz) === null) {
-        localStorage.setItem(PRZEDROSTEK_PAMIECI + klucz, stara);
+    if (localStorage.getItem(PRZEDROSTEK_PAMIECI + 'przeniesiono') !== '1') {
+      for (const klucz of STARE_KLUCZE_PAMIECI) {
+        const stara = localStorage.getItem(klucz);
+        if (stara === null) continue;
+        if (localStorage.getItem(PRZEDROSTEK_PAMIECI + klucz) === null) {
+          localStorage.setItem(PRZEDROSTEK_PAMIECI + klucz, stara);
+        }
+        localStorage.removeItem(klucz);
       }
-      localStorage.removeItem(klucz);
+      localStorage.setItem(PRZEDROSTEK_PAMIECI + 'przeniesiono', '1');
     }
-    localStorage.setItem(PRZEDROSTEK_PAMIECI + 'przeniesiono', '1');
   } catch (e) { /* tryb prywatny — nie ma czego przenosić */ }
+  // Po gołym 'motyw' -> 'gk-flota.motyw', bo ten drugi idzie dalej do 'gk.motyw'.
+  przeniesMotywDoWspolnego();
+}
+
+/* Motyw jest JEDEN dla wszystkich aplikacji GK na wspólnym źródle github.io
+   (klucz 'gk.motyw' — hub i GK Trasy robią to samo): kierowca, który wybrał
+   ciemny w GK Trasy, nie ma dostać białej kartki po przejściu do „Moje auto”.
+   Wartości jak dotąd: 'jasny' | 'ciemny', brak klucza = „jak w telefonie”
+   (inna aplikacja może zapisać 'auto' — liczy się tak samo jak brak).
+
+   Własny 'gk-flota.motyw' przechodzi do 'gk.motyw' RAZ (znacznik
+   'motyw-wspolny') i tylko wtedy, gdy wspólnego jeszcze nie ma — wybór
+   zrobiony już w innej aplikacji GK ma pierwszeństwo. Po przenosinach
+   rozstrzyga wyłącznie 'gk.motyw': gdyby własny klucz był dalej zapasem,
+   „jak w telefonie” wybrane w GK Trasy (usunięty 'gk.motyw') wskrzeszałoby
+   tu stary wybór floty. Własny klucz zapisujemy dalej obok — czyta go
+   starsza wersja aplikacji, która mogła zostać na GitHub Pages.
+   Reguła odczytu ma bliźniaka w <head> index.html. Zmieniasz jedną — zmień obie. */
+const KLUCZ_MOTYWU_GK = 'gk.motyw';
+
+function przeniesMotywDoWspolnego() {
+  try {
+    if (localStorage.getItem(PRZEDROSTEK_PAMIECI + 'motyw-wspolny') === '1') return;
+    const wlasny = localStorage.getItem(PRZEDROSTEK_PAMIECI + 'motyw');
+    if (localStorage.getItem(KLUCZ_MOTYWU_GK) === null
+        && (wlasny === 'jasny' || wlasny === 'ciemny')) {
+      localStorage.setItem(KLUCZ_MOTYWU_GK, wlasny);
+    }
+    localStorage.setItem(PRZEDROSTEK_PAMIECI + 'motyw-wspolny', '1');
+  } catch (e) { /* tryb prywatny — zostaje „jak w telefonie” */ }
+}
+
+/* '' | 'jasny' | 'ciemny' | cokolwiek zapisała inna aplikacja GK. */
+function wybranyMotyw() {
+  try {
+    const wspolny = localStorage.getItem(KLUCZ_MOTYWU_GK);
+    if (wspolny !== null) return wspolny;
+    if (localStorage.getItem(PRZEDROSTEK_PAMIECI + 'motyw-wspolny') === '1') return '';
+  } catch (e) { return ''; }
+  return przypomnijSobie('motyw');
+}
+
+/* '' = „jak w telefonie” (oba klucze znikają). Zwraca false, gdy przeglądarka
+   nie pozwala zapisać — Motyw.ustaw mówi to wtedy człowiekowi. */
+function zapamietajMotyw(wybor) {
+  try {
+    if (wybor) {
+      localStorage.setItem(KLUCZ_MOTYWU_GK, wybor);
+      localStorage.setItem(PRZEDROSTEK_PAMIECI + 'motyw', wybor);
+    } else {
+      localStorage.removeItem(KLUCZ_MOTYWU_GK);
+      localStorage.removeItem(PRZEDROSTEK_PAMIECI + 'motyw');
+    }
+    return true;
+  } catch (e) { return false; }
 }
 przeniesStareKlucze();
 
@@ -153,7 +209,7 @@ const Motyw = {
   /* 'jasny' | 'ciemny' | 'auto'. Brak klucza znaczy „jak w telefonie” — nie
      zapisujemy tam 'auto', żeby dało się odróżnić wybór od nigdy niewybrania. */
   odczytaj() {
-    const w = przypomnijSobie('motyw');
+    const w = wybranyMotyw();
     return (w === 'jasny' || w === 'ciemny') ? w : 'auto';
   },
   zastosuj() {
@@ -169,9 +225,7 @@ const Motyw = {
   /* Mówi wprost, gdy zapis się nie udał. Cicha porażka daje motyw wracający
      po każdym odświeżeniu i nikt nie wie dlaczego. */
   ustaw(wybor) {
-    const udalo = (wybor === 'jasny' || wybor === 'ciemny')
-      ? pamietaj('motyw', wybor)
-      : (zapomnijKlucz('motyw'), true);
+    const udalo = zapamietajMotyw((wybor === 'jasny' || wybor === 'ciemny') ? wybor : '');
     if (!udalo) {
       komunikat('Nie mogę zapamiętać wyboru w tej przeglądarce — wróci po odświeżeniu', 'blad');
     }
