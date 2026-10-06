@@ -6,7 +6,7 @@
    API, sprobuj). Pliki ekranow nic wlasnego w tych sprawach nie robia.
    Instrukcja "jak dodac ekran" stoi na samym koncu pliku.                   */
 
-const WERSJA_SKRYPTU = 'flotex-adf7387a365d';   // stempluje zbuduj.py
+const WERSJA_SKRYPTU = 'flotex-561de82f2d94';   // stempluje zbuduj.py
 
 /* localStorage tylko przez te trzy funkcje.
 
@@ -275,6 +275,15 @@ function czasTeraz() {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' +
     String(d.getDate()).padStart(2, '0') + ' ' + d.toTimeString().slice(0, 8);
 }
+/* „2026-10” → „październik 2026” (STYL-GK, punkt 6: miesiące słownie). */
+const MIESIACE = ['styczeń', 'luty', 'marzec', 'kwiecień', 'maj', 'czerwiec', 'lipiec',
+  'sierpień', 'wrzesień', 'październik', 'listopad', 'grudzień'];
+function miesiacSlownie(okres) {
+  const m = /^(\d{4})-(\d{2})$/.exec(String(okres || ''));
+  if (!m || +m[2] < 1 || +m[2] > 12) return String(okres || '');
+  return `${MIESIACE[+m[2] - 1]} ${m[1]}`;
+}
+
 function polskaData(iso) {
   if (!iso) return '';
   const [r, m, d] = String(iso).slice(0, 10).split('-');
@@ -768,7 +777,7 @@ async function odswiezStanSieci() {
           'zapisów nie przeszło')} — dotknij ikony konta`
       : !stan.online
         ? (stan.wKolejce ? `Brak sieci — ${ileZapisow} czeka na wysłanie`
-                         : 'Brak sieci — pracujesz offline')
+                         : 'Brak sieci — zapisy zostają w telefonie')
         : (stan.wKolejce ? `${ileZapisow} w wysyłce` : 'Połączono');
   const znacznik = document.getElementById('znacznik-kolejki');
   if (znacznik) znacznik.textContent = stan.wKolejce ? `⏳ ${stan.wKolejce}` : '';
@@ -905,6 +914,21 @@ function pokazLogowanie() {
   document.getElementById('ekran-logowania').classList.remove('ukryty');
   document.getElementById('blad-logowania').textContent = '';
   document.getElementById('form-logowania').reset();
+  pokazInfoKont();
+}
+
+/* „Konto zakłada administrator w Panelu Kierownika → Administracja.” — tylko
+   gdy konta naprawdę przychodzą z Panelu. Pyta /api/zyje (bez logowania);
+   brak odpowiedzi = brak linii, logowanie na to nie czeka. */
+async function pokazInfoKont() {
+  const linia = document.getElementById('info-kont');
+  if (!linia) return;
+  try {
+    await adresDanychGotowy();
+    const odp = await zapytajProgram('/api/zyje');
+    const w = odp.ok ? await odp.json() : {};
+    linia.hidden = !(w && w.konta_z_panelu);
+  } catch (e) { linia.hidden = true; }
 }
 
 /* --------------------------------------------------------------- ekrany */
@@ -1093,6 +1117,19 @@ function trybOffline() {
    przeglądarka chodzi na starej albo mieszanej kopii — i to widać od razu,
    bez zgadywania. To ta ramka, którą komunikat o mieszance każe pokazać
    serwisantowi.                                                             */
+/* Wersja dla ludzi bez starego przedrostka („wersja 6752eefd56ab”, nie flotex-…). */
+function wersjaDlaLudzi(w) {
+  return String(w || '?').replace(/^(flotex|gk-flota)-/, '');
+}
+
+/* Stopka okna konta: sama wersja. Ramka ze stemplami (stempelWersji) jest
+   diagnostyką — widzi ją tylko administrator; reszta dostaje ją wyłącznie
+   wtedy, gdy przeglądarka ma mieszankę wersji (z przyciskiem „Odśwież”). */
+function stopkaWersji() {
+  const skrypt = (typeof WERSJA_SKRYPTU === 'string') ? WERSJA_SKRYPTU : stan.uz.wersja;
+  return `<p class="male slaby wersja-stopka">wersja ${escHtml(wersjaDlaLudzi(skrypt))}</p>`;
+}
+
 function stempelWersji() {
   const dysk = (stan.uz && stan.uz.wersja) || '?';
   const skrypt = (typeof WERSJA_SKRYPTU === 'string') ? WERSJA_SKRYPTU : '?';
@@ -1113,6 +1150,13 @@ function stempelWersji() {
   // Przy nieopublikowanej wersji nie zmieniłoby nic — poza skasowaniem
   // kierowcy trybu offline.
   const naprawialne = mieszanka;
+  if (!jestAdministratorem()) {
+    return !naprawialne ? '' : `
+    <div class="wstega blad" id="stempel-wersji" style="margin-top:10px">
+      <b>${naglowek}</b>
+      <button class="maly" id="btn-odswiez-program" style="margin-top:8px">Odśwież program</button>
+    </div>`;
+  }
   return `
     <div class="wstega ${zgodne ? 'info' : 'blad'}" id="stempel-wersji" style="margin-top:10px">
       <b>${naglowek}</b>
@@ -1224,10 +1268,19 @@ async function odswiezProgram() {
 /* Zasada nowego PIN-u w jednym miejscu — okno konta i okno słabego PIN-u mówią
    to samo co serwer. Konto z Panelu Kierownika ma PIN wspólny dla wszystkich
    aplikacji GK: kierowca 4–8 cyfr (aplikacje hali mają klawiaturę cyfrową),
-   biuro hasło od 8 znaków (GK-KONTA.md, punkt 1). */
+   biuro hasło od 8 znaków (GK-KONTA.md, punkt 1). Pola PIN-u są bez
+   inputmode="numeric": na telefonie z klawiaturą cyfrową hasła biura nie
+   dałoby się wpisać. */
 function opisNowegoPinu() {
   if (jestBiuro()) return 'min. 8 znaków';
   return stan.uz && stan.uz.pin_w_panelu ? '4–8 cyfr' : 'min. 4 znaki';
+}
+
+/* Klawiatura jak w aplikacjach hali (konto.js): biuro — zwykła (hasło z liter),
+   kierowca z kontem z Panelu — cyfrowa (PIN to 4–8 cyfr). Tutejszy kierowca
+   mógł kiedyś dostać PIN z literami — dla niego też zwykła. */
+function trybKlawiaturyPinu() {
+  return !jestBiuro() && stan.uz && stan.uz.pin_w_panelu ? 'numeric' : 'text';
 }
 
 function oknoKonta() {
@@ -1237,13 +1290,12 @@ function oknoKonta() {
   okno({
     tytul: 'Moje konto',
     tresc: `
-      <p><b>${escHtml(stan.uz.imie)}</b> · ${escHtml(stan.uz.login)}
-         · ${escHtml(NAZWA_ROLI[stan.uz.rola] || stan.uz.rola)}</p>
+      <p><b>${escHtml(stan.uz.imie)}</b> · ${escHtml(NAZWA_ROLI[stan.uz.rola] || stan.uz.rola)}</p>
       ${stempelWersji()}
       <fieldset><legend>Wygląd</legend>
+        <label class="plaska"><input type="radio" name="motyw" value="auto">Jak w telefonie</label>
         <label class="plaska"><input type="radio" name="motyw" value="jasny">Jasny</label>
         <label class="plaska"><input type="radio" name="motyw" value="ciemny">Ciemny</label>
-        <label class="plaska"><input type="radio" name="motyw" value="auto">Jak w telefonie</label>
         <p class="male slaby">Dotyczy tego urządzenia, nie konta — zostaje po wylogowaniu,
            a na wspólnym telefonie widzą to samo wszyscy.</p>
       </fieldset>
@@ -1255,19 +1307,19 @@ function oknoKonta() {
       ${stan.uz.zrodlo === 'trasex' ? `<fieldset><legend>PIN</legend>
         <p class="male slaby">Twoje konto prowadzi GK Trasy — tam zmieniasz PIN.
            Nowy zadziała tutaj sam po kilku minutach.</p>
-      </fieldset>` : `<fieldset><legend>Zmiana PIN-u</legend>
-        <label>Obecny PIN<input id="pin-stary" type="password" inputmode="numeric"
-               autocomplete="current-password"></label>
-        <label>Nowy PIN <span class="slaby">(${escHtml(opisNowegoPinu())})</span>
-          <input id="pin-nowy" type="password" inputmode="numeric"
-                 autocomplete="new-password"></label>
+      </fieldset>` : `<fieldset><legend>${jestBiuro() ? 'Zmień hasło' : 'Zmień PIN'}</legend>
+        <label>${jestBiuro() ? 'Obecne hasło' : 'Obecny PIN'}<input id="pin-stary" type="password"
+               inputmode="${trybKlawiaturyPinu()}" autocomplete="current-password" maxlength="128"></label>
+        <label>${jestBiuro() ? 'Nowe hasło' : 'Nowy PIN'} <span class="slaby">(${escHtml(opisNowegoPinu())})</span>
+          <input id="pin-nowy" type="password" inputmode="${trybKlawiaturyPinu()}"
+                 autocomplete="new-password" maxlength="128"></label>
         <p class="male slaby">${stan.uz.pin_w_panelu
           ? 'Ten PIN działa we wszystkich aplikacjach GK — zmiana tutaj zmienia go wszędzie. '
           : ''}Zmiana wylogowuje pozostałe urządzenia — ten telefon zostaje.</p>
-        <button class="glowny" id="btn-zmien-pin">Zmień PIN</button>
+        <button class="glowny" id="btn-zmien-pin">${jestBiuro() ? 'Zmień hasło' : 'Zmień PIN'}</button>
       </fieldset>`}
-      <fieldset><legend>Dane w tym telefonie</legend>
-        <p class="male slaby">W kolejce do wysłania: <b id="ile-w-kolejce">…</b></p>
+      <fieldset><legend>Dane w tym urządzeniu</legend>
+        <p class="male slaby">Czeka na wysłanie: <b id="ile-w-kolejce">…</b></p>
         <p class="male slaby ${stan.obceWKolejce ? '' : 'ukryty'}" id="obce-w-kolejce"></p>
         <div id="odrzucone-zapisy"></div>
         <p class="male slaby">Tryb offline: <b>${escHtml(trybOffline().opis)}</b><br>
@@ -1276,7 +1328,8 @@ function oknoKonta() {
           <button id="btn-wyslij-teraz">Wyślij teraz</button>
           <button id="btn-wyloguj-2">Wyloguj</button>
         </div>
-      </fieldset>`,
+      </fieldset>
+      ${stopkaWersji()}`,
     poOtwarciu: pole => {
       // Motyw przełącza się od razu, bez zamykania okna: cały wygląd wisi
       // na jednym atrybucie <html>, więc nie ma czego przerysowywać.
@@ -1502,17 +1555,19 @@ async function rysujOdrzucone(pole) {
 function oknoStartowegoHasla() {
   const nazwa = NAZWA_ROLI[stan.uz.rola] || 'konto';
   okno({
-    tytul: 'Zmień PIN — ten jest do zgadnięcia',
-    tresc: `<div class="wstega uwaga">Konto „${escHtml(stan.uz.login)}" (${escHtml(nazwa)})
-        ma PIN z listy najczęściej zgadywanych.</div>
+    tytul: jestBiuro() ? 'Zmień hasło — to da się zgadnąć' : 'Zmień PIN — ten da się zgadnąć',
+    tresc: `<div class="wstega uwaga">Konto „${escHtml(stan.uz.imie || stan.uz.login)}" (${escHtml(nazwa)})
+        ma ${jestBiuro() ? 'hasło' : 'PIN'} z listy najczęściej zgadywanych.</div>
       <p class="male">Jeśli program jest dostępny z internetu, dostanie się tu każdy,
          kto zgadnie adres. Konto biura widzi całą flotę — numery VIN, polisy i koszty.</p>
-      <label>Obecny PIN<input id="sh-stary" type="password" inputmode="numeric"
-             autocomplete="current-password"></label>
-      <label>Nowy PIN <span class="slaby">(${escHtml(opisNowegoPinu())})</span>
-        <input id="sh-nowy" type="password" autocomplete="new-password"></label>
-      <label>Powtórz nowy PIN
-        <input id="sh-powtorz" type="password" autocomplete="new-password"></label>`,
+      <label>${jestBiuro() ? 'Obecne hasło' : 'Obecny PIN'}<input id="sh-stary" type="password"
+             inputmode="${trybKlawiaturyPinu()}" autocomplete="current-password" maxlength="128"></label>
+      <label>${jestBiuro() ? 'Nowe hasło' : 'Nowy PIN'} <span class="slaby">(${escHtml(opisNowegoPinu())})</span>
+        <input id="sh-nowy" type="password" inputmode="${trybKlawiaturyPinu()}"
+               autocomplete="new-password" maxlength="128"></label>
+      <label>${jestBiuro() ? 'Powtórz nowe hasło' : 'Powtórz nowy PIN'}
+        <input id="sh-powtorz" type="password" inputmode="${trybKlawiaturyPinu()}"
+               autocomplete="new-password" maxlength="128"></label>`,
     przyciski: [
       { napis: 'Później', klik: z => z() },
       { napis: 'Zmień teraz', klasa: 'glowny', klik: async z => {

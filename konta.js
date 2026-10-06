@@ -205,7 +205,7 @@ function oknoEdycjiKonta(u, adminow) {
       <p class="slaby male" id="k-opis-roli"></p>
 
       <label class="pole">${nowy ? 'PIN *' : 'Nowy PIN (zostaw puste, żeby nie zmieniać)'}
-        <input id="k-pin" type="password" autocomplete="new-password" maxlength="60"></label>
+        <input id="k-pin" type="password" autocomplete="new-password" maxlength="128"></label>
       <p class="slaby male" id="k-opis-pinu"></p>
 
       ${nowy ? '' : `<label class="male"><input type="checkbox" id="k-aktywny"${

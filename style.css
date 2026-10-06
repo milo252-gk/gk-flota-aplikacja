@@ -17,7 +17,7 @@
 
 :root{
   color-scheme:light;
-  --wersja-arkusza:'flotex-adf7387a365d';   /* stempluje zbuduj.py — NIGDY dwa razy w tym pliku */
+  --wersja-arkusza:'flotex-561de82f2d94';   /* stempluje zbuduj.py — NIGDY dwa razy w tym pliku */
 
   /* ---- A) BARWY MARKI -------------------------------------------------
      Wzięte wprost z firmowych znaków — próbkowane z plików logo, nie dobrane
@@ -249,6 +249,8 @@ button.ikona-btn{border:0; background:none; font-size:19px; padding:0 10px; line
 .karta-logowania .pod{margin:0 0 20px; color:var(--tekst-slaby); font-size:13px}
 .karta-logowania label{display:block; text-align:left; margin-bottom:14px;
                        font-weight:600; font-size:13px}
+.karta-logowania .info-kont{margin:14px 0 0; color:var(--tekst-slaby); font-size:12.5px; line-height:1.4}
+.wersja-stopka{margin:14px 0 0; text-align:center}
 .blad-logowania{color:var(--czerwony); font-size:13px; min-height:18px; margin-bottom:8px;
                 font-weight:600}
 

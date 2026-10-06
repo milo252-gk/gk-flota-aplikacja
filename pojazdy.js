@@ -66,7 +66,7 @@ EKRANY.pulpit = {
       <div class="karta">
         <div class="karta-gora">
           <h2>${escHtml(d.firma || 'Flota')}</h2>
-          <span class="slaby male">${escHtml(d.okres || '')}</span>
+          <span class="slaby male">${escHtml(miesiacSlownie(d.okres))}</span>
         </div>
         <div class="kafelki">
           <div class="${klasa(kaf.po_terminie, 'pilne')}">
@@ -105,7 +105,7 @@ EKRANY.pulpit = {
         ? ` <span class="slaby male">(pokazuję ${d.alarmy.length} z ${d.alarmow})</span>` : ''}</h3>
       <div id="p-alarmy">${listaAlarmow(d.alarmy || [])}</div>
 
-      <h3>Przeglądy zaległe za ${escHtml(d.okres || 'ten miesiąc')}</h3>
+      <h3>Przeglądy zaległe za ${escHtml(d.okres ? miesiacSlownie(d.okres) : 'ten miesiąc')}</h3>
       <div id="p-zalegle">${listaZaleglych(d.zalegle || [])}</div>
 
       ${(d.usterki || []).length ? `<h3>Otwarte usterki</h3>
@@ -374,7 +374,7 @@ function historiaProtokolow(lista) {
   if (!lista.length) return '<p class="slaby">Jeszcze żadnego przeglądu.</p>';
   return `<ul class="os-czasu">${lista.map(g => `
     <li class="${g.status === 'zatwierdzony' ? 'ok' : (g.status === 'odrzucony' ? 'nie' : '')}">
-      <b>${escHtml(g.okres)}</b>
+      <b>${escHtml(miesiacSlownie(g.okres))}</b>
       <span class="plakietka p-${escHtml(g.status)}">${escHtml(g.status)}</span>
       ${g.przebieg != null ? ' · ' + escHtml(kilometry(g.przebieg)) : ''}
       ${g.kierowca_imie ? ' · ' + escHtml(g.kierowca_imie) : ''}
