@@ -6,7 +6,7 @@
    API, sprobuj). Pliki ekranow nic wlasnego w tych sprawach nie robia.
    Instrukcja "jak dodac ekran" stoi na samym koncu pliku.                   */
 
-const WERSJA_SKRYPTU = 'flotex-561de82f2d94';   // stempluje zbuduj.py
+const WERSJA_SKRYPTU = 'flotex-0e0b79da418c';   // stempluje zbuduj.py
 
 /* localStorage tylko przez te trzy funkcje.
 
@@ -332,8 +332,10 @@ async function zamknijZPytaniem() {
 /* Klasy przycisków stopki: brak / 'glowny' / 'niszczacy'.
    Kolejność: akcje dodatkowe -> Anuluj -> Zapisz ('glowny' zawsze ostatni),
    bo kciuk na telefonie ląduje przy prawej krawędzi.                        */
-function okno({ tytul, tresc, przyciski, poOtwarciu, szerokie }) {
+/* konto: true — okno „Moje konto” w wyglądzie okna konta aplikacji hali (style.css → .okno-konta). */
+function okno({ tytul, tresc, przyciski, poOtwarciu, szerokie, konto }) {
   const tlo = document.getElementById('okno-tlo');
+  tlo.classList.toggle('okno-konta', !!konto);
   document.getElementById('okno-tytul').textContent = tytul || '';
   const poleTresci = document.getElementById('okno-tresc');
   poleTresci.innerHTML = tresc || '';
@@ -933,7 +935,8 @@ async function pokazInfoKont() {
 
 /* --------------------------------------------------------------- ekrany */
 
-const NAZWA_ROLI = { admin: 'administrator', biuro: 'biuro', kierowca: 'kierowca' };
+// Z wielkiej litery, jak role w oknie konta aplikacji hali (STYL-GK §3).
+const NAZWA_ROLI = { admin: 'Administrator', biuro: 'Biuro', kierowca: 'Kierowca' };
 
 /* Trzy role, dwa progi. 'biuro' to wszystko, co robi się w biurze;
    'administrator' to dodatkowo konta i Ustawienia. Kierowca nie widzi ani
@@ -997,7 +1000,7 @@ async function pokazEkran(nazwa, parametry) {
     // wprost zamiast zostawiać pusty ekran bez jednego słowa wyjaśnienia.
     tresc.innerHTML = `<div class="karta"><h2>Tej części programu tu nie ma</h2>
       <p class="slaby">Ekran „${escHtml(nazwa)}" nie został wczytany. Otwórz
-      👤 Moje konto i pokaż serwisantowi stemple wersji.</p></div>`;
+      Moje konto (ikona osoby u góry) i pokaż serwisantowi stemple wersji.</p></div>`;
     return;
   }
   if (ekran.tylkoBiuro && !jestBiuro()) return;
@@ -1098,15 +1101,16 @@ function trybOffline() {
       opis: 'ograniczony',
       wyjasnienie: 'Aplikacja trzyma zdjęcia i odczyty bez zasięgu i wysyła je po powrocie, '
         + 'ale musi być otwarta od wyjazdu. Otwórz ją jeszcze na firmowym wifi. '
-        + 'Pełny tryb offline włącza dopiero adres z https:// — biuro uruchamia go '
+        + 'Pełną pracę bez zasięgu włącza dopiero adres z https:// — biuro uruchamia go '
         + 'w Ustawieniach, w sekcji „Adres HTTPS dla kierowców".',
     };
   }
   return {
     pelny: true,
     opis: 'pełny',
+    // „urządzenia”, nie „telefonu” — to samo okno widzi biuro na komputerze.
     wyjasnienie: 'Aplikacja otwiera się i działa bez zasięgu, także po ponownym '
-      + 'uruchomieniu telefonu.',
+      + 'uruchomieniu urządzenia.',
   };
 }
 
@@ -1127,7 +1131,7 @@ function wersjaDlaLudzi(w) {
    wtedy, gdy przeglądarka ma mieszankę wersji (z przyciskiem „Odśwież”). */
 function stopkaWersji() {
   const skrypt = (typeof WERSJA_SKRYPTU === 'string') ? WERSJA_SKRYPTU : stan.uz.wersja;
-  return `<p class="male slaby wersja-stopka">wersja ${escHtml(wersjaDlaLudzi(skrypt))}</p>`;
+  return `<p class="konto-drobne wersja-stopka">wersja ${escHtml(wersjaDlaLudzi(skrypt))}</p>`;
 }
 
 function stempelWersji() {
@@ -1156,6 +1160,14 @@ function stempelWersji() {
       <b>${naglowek}</b>
       <button class="maly" id="btn-odswiez-program" style="margin-top:8px">Odśwież program</button>
     </div>`;
+  }
+  // Wszystko zgodne: administrator dostaje stemple zwinięte pod „wersja X”, a nie
+  // niebieską ramkę w środku okna konta (STYL-GK §3: na dole samo „wersja X”).
+  if (zgodne) {
+    return `<details class="konto-wersja" id="stempel-wersji"><summary>Szczegóły wersji</summary>
+      ${osobno ? 'program w biurze' : 'pliki na dysku'}: <code>${escHtml(dysk)}</code><br>
+      ${osobno ? 'aplikacja na GitHub Pages' : 'skrypt w przeglądarce'}: <code>${escHtml(skrypt)}</code><br>
+      arkusz w przeglądarce: <code>${escHtml(arkusz)}</code></details>`;
   }
   return `
     <div class="wstega ${zgodne ? 'info' : 'blad'}" id="stempel-wersji" style="margin-top:10px">
@@ -1236,7 +1248,7 @@ async function sprawdzSpojnoscWersji() {
   catch (e) { /* tryb prywatny */ }
   if (juzProbowano) {
     komunikat('Przeglądarka chodzi na mieszance wersji programu. '
-      + 'Otwórz 👤 Moje konto i pokaż tę ramkę serwisantowi.', 'blad');
+      + 'Otwórz Moje konto (ikona osoby u góry) i pokaż tę ramkę serwisantowi.', 'blad');
     return;
   }
   try { sessionStorage.setItem(PRZEDROSTEK_PAMIECI + 'naprawa-wersji', proba); } catch (e) { /* trudno */ }
@@ -1283,76 +1295,111 @@ function trybKlawiaturyPinu() {
   return !jestBiuro() && stan.uz && stan.uz.pin_w_panelu ? 'numeric' : 'text';
 }
 
+/* Wygląd w oknie konta: pigułki jak w aplikacjach hali (STYL-GK §3), nie natywne
+   radio. Na komputerze „Jak w systemie”, na telefonie „Jak w telefonie” — ta sama
+   reguła (brak wyboru = jak urządzenie), inne słowo. Próg jak w arkuszu (821 px). */
+function wyborWygladu() {
+  const naKomputerze = typeof window.matchMedia === 'function'
+    && window.matchMedia('(min-width:821px)').matches;
+  const wybrany = Motyw.odczytaj();
+  return [['auto', naKomputerze ? 'Jak w systemie' : 'Jak w telefonie'], ['jasny', 'Jasny'], ['ciemny', 'Ciemny']]
+    .map(([k, n]) => `<button type="button" data-wyglad="${k}" aria-pressed="${wybrany === k}">${n}</button>`)
+    .join('');
+}
+
+/* „Moje konto” w układzie okna konta aplikacji hali (konto.js → HalaKonto.mojeKonto),
+   tak samo jak w GK Trasy: osoba i rola → Wygląd → Zmień hasło/PIN (formularz
+   rozwija się w oknie) → Powiadomienia → Dane w tym urządzeniu → wersja →
+   Zamknij + Wyloguj na dole. */
 function oknoKonta() {
   // Serwer wymaga od biura dłuższego hasła niż od kierowcy: konto biura widzi
   // całą flotę z VIN-ami i polisami. Podpowiedź musi mówić tę samą liczbę,
   // inaczej człowiek wpisuje cztery znaki i dostaje odmowę bez zrozumienia.
+  const zmien = jestBiuro() ? 'Zmień hasło' : 'Zmień PIN';
   okno({
     tytul: 'Moje konto',
+    konto: true,
     tresc: `
-      <p><b>${escHtml(stan.uz.imie)}</b> · ${escHtml(NAZWA_ROLI[stan.uz.rola] || stan.uz.rola)}</p>
-      ${stempelWersji()}
+      <p class="konto-kto"><b>${escHtml(stan.uz.imie)}</b><span>${escHtml(NAZWA_ROLI[stan.uz.rola] || stan.uz.rola)}</span></p>
       <fieldset><legend>Wygląd</legend>
-        <label class="plaska"><input type="radio" name="motyw" value="auto">Jak w telefonie</label>
-        <label class="plaska"><input type="radio" name="motyw" value="jasny">Jasny</label>
-        <label class="plaska"><input type="radio" name="motyw" value="ciemny">Ciemny</label>
-        <p class="male slaby">Dotyczy tego urządzenia, nie konta — zostaje po wylogowaniu,
-           a na wspólnym telefonie widzą to samo wszyscy.</p>
+        <div class="wybor-wygladu" role="group" aria-label="Wygląd">${wyborWygladu()}</div>
+        <p class="konto-drobne">Dotyczy tego urządzenia, nie konta — zostaje po wylogowaniu.</p>
       </fieldset>
-      <fieldset><legend>Powiadomienia</legend>
-        <label class="plaska"><input type="checkbox" id="powiadomienia-wl" disabled>
-          Powiadomienia</label>
-        <p class="male slaby" id="powiadomienia-opis">Sprawdzam…</p>
-      </fieldset>
-      ${stan.uz.zrodlo === 'trasex' ? `<fieldset><legend>PIN</legend>
-        <p class="male slaby">Twoje konto prowadzi GK Trasy — tam zmieniasz PIN.
-           Nowy zadziała tutaj sam po kilku minutach.</p>
-      </fieldset>` : `<fieldset><legend>${jestBiuro() ? 'Zmień hasło' : 'Zmień PIN'}</legend>
+      ${stan.uz.zrodlo === 'trasex'
+        ? `<p class="konto-drobne">Twoje konto prowadzi GK Trasy — tam zmieniasz PIN.
+             Nowy zadziała tutaj sam po kilku minutach.</p>`
+        : `<div><button type="button" id="btn-pokaz-zmiane">${zmien}</button></div>
+      <fieldset id="zmiana-pinu" class="ukryty"><legend>${zmien}</legend>
         <label>${jestBiuro() ? 'Obecne hasło' : 'Obecny PIN'}<input id="pin-stary" type="password"
                inputmode="${trybKlawiaturyPinu()}" autocomplete="current-password" maxlength="128"></label>
         <label>${jestBiuro() ? 'Nowe hasło' : 'Nowy PIN'} <span class="slaby">(${escHtml(opisNowegoPinu())})</span>
           <input id="pin-nowy" type="password" inputmode="${trybKlawiaturyPinu()}"
                  autocomplete="new-password" maxlength="128"></label>
-        <p class="male slaby">${stan.uz.pin_w_panelu
-          ? 'Ten PIN działa we wszystkich aplikacjach GK — zmiana tutaj zmienia go wszędzie. '
-          : ''}Zmiana wylogowuje pozostałe urządzenia — ten telefon zostaje.</p>
-        <button class="glowny" id="btn-zmien-pin">${jestBiuro() ? 'Zmień hasło' : 'Zmień PIN'}</button>
-      </fieldset>`}
-      <fieldset><legend>Dane w tym urządzeniu</legend>
-        <p class="male slaby">Czeka na wysłanie: <b id="ile-w-kolejce">…</b></p>
-        <p class="male slaby ${stan.obceWKolejce ? '' : 'ukryty'}" id="obce-w-kolejce"></p>
-        <div id="odrzucone-zapisy"></div>
-        <p class="male slaby">Tryb offline: <b>${escHtml(trybOffline().opis)}</b><br>
-           ${escHtml(trybOffline().wyjasnienie)}</p>
+        <p class="konto-drobne">${stan.uz.pin_w_panelu
+          ? (jestBiuro()
+            ? 'To hasło działa we wszystkich aplikacjach GK — zmiana tutaj zmienia je wszędzie. '
+            : 'Ten PIN działa we wszystkich aplikacjach GK — zmiana tutaj zmienia go wszędzie. ')
+          : ''}Zmiana wylogowuje pozostałe urządzenia — to urządzenie zostaje.</p>
         <div class="przyciski">
-          <button id="btn-wyslij-teraz">Wyślij teraz</button>
-          <button id="btn-wyloguj-2">Wyloguj</button>
+          <button type="button" id="btn-anuluj-zmiane">Anuluj</button>
+          <button type="button" class="glowny" id="btn-zmien-pin">${zmien}</button>
         </div>
+      </fieldset>`}
+      <fieldset><legend>Powiadomienia</legend>
+        <div id="push-konto" class="konto-push"><p class="konto-drobne">Sprawdzam…</p></div>
+        <p class="konto-drobne">${escHtml(opisPowiadomien())}</p>
       </fieldset>
-      ${stopkaWersji()}`,
+      <fieldset><legend>Dane w tym urządzeniu</legend>
+        <p class="konto-drobne">Czeka na wysłanie: <span id="ile-w-kolejce">…</span></p>
+        <p class="konto-drobne ${stan.obceWKolejce ? '' : 'ukryty'}" id="obce-w-kolejce"></p>
+        <div id="odrzucone-zapisy"></div>
+        <p class="konto-drobne">${escHtml(trybOffline().wyjasnienie)}</p>
+        <div><button type="button" id="btn-wyslij-teraz">Wyślij teraz</button></div>
+      </fieldset>
+      ${stopkaWersji()}
+      ${stempelWersji()}`,
+    przyciski: [
+      { napis: 'Zamknij', klik: z => z() },
+      { napis: 'Wyloguj', klasa: 'glowny', klik: z => { z(); wyloguj(); } },
+    ],
     poOtwarciu: pole => {
       // Motyw przełącza się od razu, bez zamykania okna: cały wygląd wisi
       // na jednym atrybucie <html>, więc nie ma czego przerysowywać.
-      const motyw = Motyw.odczytaj();
-      pole.querySelectorAll('input[name=motyw]').forEach(r => {
-        r.checked = (r.value === motyw);
-        r.onchange = () => Motyw.ustaw(r.value);
+      const pigulki = pole.querySelectorAll('[data-wyglad]');
+      pigulki.forEach(b => b.onclick = () => {
+        Motyw.ustaw(b.dataset.wyglad);
+        pigulki.forEach(x => x.setAttribute('aria-pressed', String(x === b)));
       });
       pole.querySelector('#ile-w-kolejce').textContent = stan.bezPamieci
-        ? 'pamięć telefonu nie odpowiada' : stan.wKolejce;
+        ? 'pamięć przeglądarki nie odpowiada' : stan.wKolejce;
       if (stan.obceWKolejce) {
         pole.querySelector('#obce-w-kolejce').innerHTML =
           `⚠️ Dodatkowo <b>${stan.obceWKolejce}</b> ${odmiana(stan.obceWKolejce,
             'zapis czeka', 'zapisy czekają', 'zapisów czeka')} na inną osobę,
-           która pracowała na tym telefonie. Wyślą się, gdy ta osoba się tu zaloguje —
+           która pracowała na tym urządzeniu. Wyślą się, gdy ta osoba się tu zaloguje —
            nie kasuj danych aplikacji, bo przepadną.`;
+      }
+      // „Zmień hasło” to przycisk; formularz rozwija się dopiero po nim (jak w hali).
+      const formularz = pole.querySelector('#zmiana-pinu');
+      const pokaz = pole.querySelector('#btn-pokaz-zmiane');
+      if (pokaz) {
+        pokaz.onclick = () => {
+          pokaz.parentNode.classList.add('ukryty');
+          formularz.classList.remove('ukryty');
+          pole.querySelector('#pin-stary').focus();
+        };
+        pole.querySelector('#btn-anuluj-zmiane').onclick = () => {
+          formularz.querySelectorAll('input').forEach(i => { i.value = ''; });
+          formularz.classList.add('ukryty');
+          pokaz.parentNode.classList.remove('ukryty');
+        };
       }
       const zmienPin = pole.querySelector('#btn-zmien-pin');
       if (zmienPin) zmienPin.onclick = async () => {
         const stary = pole.querySelector('#pin-stary').value;
         const nowy = pole.querySelector('#pin-nowy').value;
         const w = await sprobuj(() => API.post('/api/zmien-pin', { stary, nowy }),
-          'PIN zmieniony — pozostałe urządzenia zostały wylogowane');
+          `${jestBiuro() ? 'Hasło zmienione' : 'PIN zmieniony'} — pozostałe urządzenia zostały wylogowane`);
         if (!w) return;
         // Zmiana hasła unieważnia stare sesje, więc trzeba przejąć nowy token,
         // inaczej wyrzuciłoby z aplikacji dokładnie tego, kto właśnie posłuchał
@@ -1361,12 +1408,11 @@ function oknoKonta() {
         stan.uz.haslo_startowe = false;
         zamknijOkno();
       };
-      podepnijPowiadomienia(pole);
+      rysujPowiadomienia(pole.querySelector('#push-konto'));
       rysujOdrzucone(pole.querySelector('#odrzucone-zapisy'));
       pole.querySelector('#btn-wyslij-teraz').onclick = () => synchronizuj(false);
       const odswiez = pole.querySelector('#btn-odswiez-program');
       if (odswiez) odswiez.onclick = odswiezProgram;
-      pole.querySelector('#btn-wyloguj-2').onclick = () => { zamknijOkno(); wyloguj(); };
     },
   });
 }
@@ -1461,27 +1507,29 @@ function opisPowiadomien() {
     : 'Przegląd do zrobienia i przypomnienie, odrzucony przegląd, zamknięta usterka.';
 }
 
-async function podepnijPowiadomienia(pole) {
-  const przelacznik = pole.querySelector('#powiadomienia-wl');
-  const opis = pole.querySelector('#powiadomienia-opis');
-  if (!przelacznik) return;
-  const odswiez = async () => {
-    const s = await Powiadomienia.stan();
-    przelacznik.checked = s === 'wlaczone';
-    przelacznik.disabled = s === 'niedostepne' || s === 'zablokowane';
-    opis.textContent = s === 'niedostepne' ? NIEDOSTEPNE_POWIADOMIENIA
-      : s === 'zablokowane' ? 'Zablokowane w przeglądarce — zezwól na powiadomienia dla tej '
-        + 'strony w ustawieniach przeglądarki (kłódka obok adresu).'
-      : opisPowiadomien();
-  };
-  przelacznik.onchange = async () => {
-    przelacznik.disabled = true;
-    const wlacz = przelacznik.checked;
+/* Jeden przycisk w oknie „Moje konto”: Włącz powiadomienia / Włączone + Wyłącz —
+   te same stany i słowa co w GK Trasy i w Panelu (STYL-GK §3). Dawniej był tu
+   natywny checkbox pod drugim nagłówkiem „Powiadomienia”. */
+async function rysujPowiadomienia(pole) {
+  if (!pole) return;
+  const s = await Powiadomienia.stan();
+  pole.innerHTML = s === 'wlaczone'
+    ? `<p class="konto-ok">Włączone — także przy zamkniętej aplikacji.</p>
+       <button type="button" id="btn-push" data-push="wylacz">Wyłącz</button>`
+    : s === 'zablokowane'
+      ? `<p class="konto-uwaga">Zablokowane — zezwól na powiadomienia w ustawieniach
+           przeglądarki dla tej strony.</p>`
+      : s === 'niedostepne'
+        ? `<p class="konto-uwaga">${escHtml(NIEDOSTEPNE_POWIADOMIENIA)}</p>`
+        : `<button type="button" class="glowny" id="btn-push" data-push="wlacz">Włącz powiadomienia</button>`;
+  const b = pole.querySelector('#btn-push');
+  if (b) b.onclick = async () => {
+    b.disabled = true;
+    const wlacz = b.dataset.push === 'wlacz';
     await sprobuj(() => (wlacz ? Powiadomienia.wlacz() : Powiadomienia.wylacz()),
                   wlacz ? 'Powiadomienia włączone' : 'Powiadomienia wyłączone');
-    await odswiez();
+    rysujPowiadomienia(pole);
   };
-  await odswiez();
 }
 
 /* Ekran wskazany przez powiadomienie: tylko z rejestru i tylko taki, który ta
@@ -1519,7 +1567,7 @@ async function rysujOdrzucone(pole) {
   pole.innerHTML = `
     <div class="wstega uwaga" style="margin-top:12px">
       <b>${lista.length} ${odmiana(lista.length, 'zapis nie przeszedł', 'zapisy nie przeszły',
-        'zapisów nie przeszło')}.</b> Nic nie zostało skasowane — leżą w tym telefonie.
+        'zapisów nie przeszło')}.</b> Nic nie zostało skasowane — leżą w tym urządzeniu.
       Pokaż to biuru; gdy usuną przyczynę, dotknij „Spróbuj ponownie".
     </div>
     ${lista.map(o => `<div class="karta scisla" style="margin-bottom:8px">
@@ -1553,7 +1601,7 @@ async function rysujOdrzucone(pole) {
    najczęściej zgadywanych i melduje ją polem haslo_startowe — pytamy przy
    każdym wejściu, dopóki PIN nie zostanie zmieniony.                        */
 function oknoStartowegoHasla() {
-  const nazwa = NAZWA_ROLI[stan.uz.rola] || 'konto';
+  const nazwa = (NAZWA_ROLI[stan.uz.rola] || 'konto').toLowerCase();
   okno({
     tytul: jestBiuro() ? 'Zmień hasło — to da się zgadnąć' : 'Zmień PIN — ten da się zgadnąć',
     tresc: `<div class="wstega uwaga">Konto „${escHtml(stan.uz.imie || stan.uz.login)}" (${escHtml(nazwa)})
