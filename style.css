@@ -17,7 +17,7 @@
 
 :root{
   color-scheme:light;
-  --wersja-arkusza:'flotex-5127dfe136b1';   /* stempluje zbuduj.py — NIGDY dwa razy w tym pliku */
+  --wersja-arkusza:'flotex-46270f5c3434';   /* stempluje zbuduj.py — NIGDY dwa razy w tym pliku */
 
   /* ---- A) BARWY MARKI -------------------------------------------------
      Wzięte wprost z firmowych znaków — próbkowane z plików logo, nie dobrane
@@ -695,7 +695,7 @@ td.liczba,th.liczba{text-align:right; font-variant-numeric:tabular-nums; white-s
 .konto-wersja{font-size:12px; color:var(--tekst-slaby)}
 .konto-wersja summary{cursor:pointer; width:max-content}
 .konto-kto{display:grid; gap:2px}
-.konto-kto b{font-size:16px}
+.konto-kto b{font-size:16px; font-weight:600}
 .konto-kto span{font-size:14px; color:var(--tekst-slaby)}
 .konto-drobne{font-size:12px; color:var(--tekst-slaby)}
 .konto-uwaga{font-size:14px; color:var(--zolty)}
