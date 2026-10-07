@@ -58,11 +58,11 @@
 })();
 </script>
 <title>GK Flota</title>
-<link rel="manifest" href="manifest.webmanifest?v=flotex-0e0b79da418c">
-<link rel="icon" href="ikona.svg?v=flotex-0e0b79da418c">
+<link rel="manifest" href="manifest.webmanifest?v=flotex-5127dfe136b1">
+<link rel="icon" href="ikona.svg?v=flotex-5127dfe136b1">
 <!-- iPhone nie bierze ikony z manifestu ani z SVG: na ekran początkowy
      dodaje to, co wskazuje apple-touch-icon, i to musi być PNG. -->
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=flotex-0e0b79da418c">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=flotex-5127dfe136b1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="GK Flota">
@@ -70,7 +70,7 @@
      nie pod nią. Odstępy env(safe-area-inset-top) w .gora i podglądzie zdjęcia
      zostają — przy „black” są po prostu zerowe. -->
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<link rel="stylesheet" href="style.css?v=flotex-0e0b79da418c">
+<link rel="stylesheet" href="style.css?v=flotex-5127dfe136b1">
 </head>
 <body>
 
@@ -79,10 +79,10 @@
      tokenu. Bez klasy 'ukryty' formularz mrugałby przy każdym wejściu. -->
 <div id="ekran-logowania" class="logowanie ukryty">
   <form class="karta-logowania" id="form-logowania">
-    <img class="znak-logo" src="logo-gkf.png?v=flotex-0e0b79da418c"
+    <img class="znak-logo" src="logo-gkf.png?v=flotex-5127dfe136b1"
          alt="GK Factory" width="666" height="374">
     <h1>GK Flota</h1>
-    <p class="pod">Zaloguj się imieniem i&nbsp;nazwiskiem i&nbsp;PIN-em</p>
+    <p class="pod">Zaloguj się imieniem i&nbsp;nazwiskiem i&nbsp;<span class="bez-lamania">PIN-em</span></p>
     <!-- Te same słowa co GK Trasy i aplikacje hali (GK-KONTA.md, punkt 4,
          STYL-GK punkt 2): jedna osoba loguje się wszędzie tak samo. Stary
          login („marek") działa dalej — serwer go zna — ale ekran go nie podsuwa.
@@ -131,7 +131,7 @@
        ikon, bo program musi wstać bez internetu. -->
   <nav class="menu" id="menu">
     <div class="menu-naglowek">
-      <img class="menu-logo" src="logo-gkf.png?v=flotex-0e0b79da418c" alt="GK Factory"
+      <img class="menu-logo" src="logo-gkf.png?v=flotex-5127dfe136b1" alt="GK Factory"
            width="666" height="374">
       <div class="menu-imie" id="menu-imie"></div>
       <div class="menu-rola" id="menu-rola"></div>
@@ -155,7 +155,9 @@
     <button data-ekran="konta"      class="tylko-administrator">👥 <span>Konta</span></button>
     <button data-ekran="ustawienia" class="tylko-administrator">⚙️ <span>Ustawienia</span></button>
     <div class="menu-stopka">
-      <button id="btn-wyloguj"><span class="ikona-menu">🚪</span> <span>Wyloguj</span></button>
+      <!-- Ikona „wyjście” w SVG, ta sama co #menu-wyloguj w aplikacjach hali
+           (STYL-GK §3): currentColor = biel menu, nie brązowe emoji drzwi. -->
+      <button id="btn-wyloguj"><span class="ikona-menu" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></span> <span>Wyloguj</span></button>
     </div>
   </nav>
   <div class="zaslona" id="zaslona"></div>
@@ -210,17 +212,17 @@
      KAŻDY nowy plik .js trzeba dopisać w DWÓCH listach: tutaj i w ZASOBY
      w sw.js. Pominięcie w sw.js daje program, który działa przy zasięgu,
      a bez zasięgu nie wstaje wcale. -->
-<script src="kolejka.js?v=flotex-0e0b79da418c"></script>
-<script src="zdjecia.js?v=flotex-0e0b79da418c"></script>
-<script src="podpis.js?v=flotex-0e0b79da418c"></script>
-<script src="skrot.js?v=flotex-0e0b79da418c"></script>
-<script src="app.js?v=flotex-0e0b79da418c"></script>
-<script src="pojazdy.js?v=flotex-0e0b79da418c"></script>
-<script src="przeglady.js?v=flotex-0e0b79da418c"></script>
-<script src="awaria.js?v=flotex-0e0b79da418c"></script>
-<script src="zaproszenie.js?v=flotex-0e0b79da418c"></script>
-<script src="kierowca.js?v=flotex-0e0b79da418c"></script>
-<script src="ustawienia.js?v=flotex-0e0b79da418c"></script>
-<script src="konta.js?v=flotex-0e0b79da418c"></script>
+<script src="kolejka.js?v=flotex-5127dfe136b1"></script>
+<script src="zdjecia.js?v=flotex-5127dfe136b1"></script>
+<script src="podpis.js?v=flotex-5127dfe136b1"></script>
+<script src="skrot.js?v=flotex-5127dfe136b1"></script>
+<script src="app.js?v=flotex-5127dfe136b1"></script>
+<script src="pojazdy.js?v=flotex-5127dfe136b1"></script>
+<script src="przeglady.js?v=flotex-5127dfe136b1"></script>
+<script src="awaria.js?v=flotex-5127dfe136b1"></script>
+<script src="zaproszenie.js?v=flotex-5127dfe136b1"></script>
+<script src="kierowca.js?v=flotex-5127dfe136b1"></script>
+<script src="ustawienia.js?v=flotex-5127dfe136b1"></script>
+<script src="konta.js?v=flotex-5127dfe136b1"></script>
 </body>
 </html>

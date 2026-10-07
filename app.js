@@ -6,7 +6,7 @@
    API, sprobuj). Pliki ekranow nic wlasnego w tych sprawach nie robia.
    Instrukcja "jak dodac ekran" stoi na samym koncu pliku.                   */
 
-const WERSJA_SKRYPTU = 'flotex-0e0b79da418c';   // stempluje zbuduj.py
+const WERSJA_SKRYPTU = 'flotex-5127dfe136b1';   // stempluje zbuduj.py
 
 /* localStorage tylko przez te trzy funkcje.
 
@@ -1346,8 +1346,8 @@ function oknoKonta() {
         </div>
       </fieldset>`}
       <fieldset><legend>Powiadomienia</legend>
-        <div id="push-konto" class="konto-push"><p class="konto-drobne">Sprawdzam…</p></div>
         <p class="konto-drobne">${escHtml(opisPowiadomien())}</p>
+        <div id="push-konto" class="konto-push"><p class="konto-drobne">Sprawdzam…</p></div>
       </fieldset>
       <fieldset><legend>Dane w tym urządzeniu</legend>
         <p class="konto-drobne">Czeka na wysłanie: <span id="ile-w-kolejce">…</span></p>
